@@ -6,9 +6,10 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
-import { User as UserModel, Post as PostModel, User } from '@prisma/client';
-import { AppService } from './app.service';
+import { User as UserModel, Post as PostModel } from '@prisma/client';
+
 import { PostService } from './post/post.service';
 import { UserService } from './user/user.service';
 
@@ -28,6 +29,13 @@ export class AppController {
   async getPublishedPosts(): Promise<PostModel[]> {
     return this.postService.posts({
       where: { published: true },
+    });
+  }
+
+  @Get('draft')
+  async getUnPublishedPosts(): Promise<PostModel[]> {
+    return this.postService.posts({
+      where: { published: false },
     });
   }
 
@@ -53,13 +61,10 @@ export class AppController {
   async createDraft(
     @Body() postData: { title: string; content?: string; authorEmail: string },
   ): Promise<PostModel> {
-    const { title, content, authorEmail } = postData;
+    const { title, content } = postData;
     return this.postService.createPost({
       title,
       content,
-      author: {
-        connect: { email: authorEmail },
-      },
     });
   }
 
@@ -71,10 +76,13 @@ export class AppController {
   }
 
   @Put('publish/:id')
-  async publishPost(@Param('id') id: string): Promise<PostModel> {
+  async publishPost(
+    @Param('id') id: string,
+    @Query('title') title: string,
+  ): Promise<PostModel> {
     return this.postService.updatePost({
       where: { id: Number(id) },
-      data: { published: true },
+      data: { title: title },
     });
   }
 
